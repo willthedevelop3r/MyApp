@@ -1,0 +1,8 @@
+# Ignore .NET build artifacts
+bin/
+obj/
+.vs/
+
+# Ignore logs
+logs/
+*.log

@@ -1,0 +1,277 @@
+﻿@page
+@model WebClient.Pages.Students.StudentAddModel
+@{
+    ViewData["Title"] = "Admin – Add Student";
+}
+
+<h2>Admin – Add Student</h2>
+
+<div id="successMessage" class="alert alert-success mt-3" style="display: none;">
+    Student successfully saved! Redirecting...
+</div>
+
+<div id="studentErrorMessages" class="alert alert-danger mt-3" style="display: none;"></div>
+
+<div class="container d-flex justify-content-center">
+    <div class="card p-4 shadow" style="max-width: 500px; width: 100%;">
+        <form id="studentForm">
+            <div class="mb-3">
+                <label for="firstName" class="form-label">First Name*</label>
+                <input type="text" class="form-control" id="firstName" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="lastName" class="form-label">Last Name*</label>
+                <input type="text" class="form-control" id="lastName" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="selSchool" class="form-label">School*</label>
+                <select class="form-select" id="selSchool" required>
+                </select>
+            </div>
+
+            <div class="mb-3 text-end">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSchoolModal">
+                    Add School
+                </button>
+            </div>
+
+            <div class="mb-3">
+                <label for="major" class="form-label">Major*</label>
+                <input type="text" class="form-control" id="major" required>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="isActive">
+                <label class="form-check-label" for="isActive">Active</label>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100">Save Student</button>
+            <a href="/students/list" class="btn btn-secondary w-100 mt-2">Cancel</a>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="addSchoolModal" tabindex="-1" aria-labelledby="addSchoolModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSchoolModalLabel">Add New School</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="schoolErrorMessages" class="alert alert-danger mt-3" style="display: none;"></div>
+                <form id="schoolForm">
+                    <div class="mb-1">
+                        <label for="schoolName" class="form-label">School Name*</label>
+                        <input type="text" class="form-control" id="schoolName" required>
+                    </div>
+                    <div class="mb-1">
+                        <label for="address1" class="form-label">Address 1*</label>
+                        <input type="text" class="form-control" id="address1" required>
+                    </div>
+                    <div class="mb-1">
+                        <label for="address2" class="form-label">Address 2</label>
+                        <input type="text" class="form-control" id="address2">
+                    </div>
+                    <div class="mb-1">
+                        <label for="city" class="form-label">City*</label>
+                        <input type="text" class="form-control" id="city" required>
+                    </div>
+                    <div class="mb-1">
+                        <label for="state" class="form-label">State*</label>
+                        <input type="text" class="form-control" id="state" required>
+                    </div>
+                    <div class="mb-1">
+                        <label for="zipCode" class="form-label">Zip Code*</label>
+                        <input type="text" class="form-control" id="zipCode" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Save School</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeAddSchoolModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            buildSchoolDDL();
+
+            let studentForm = document.getElementById("studentForm");
+            studentForm.addEventListener("submit", function (event) {
+                event.preventDefault();
+                saveStudent();
+            });
+
+            let saveSchoolButton = document.getElementById("schoolForm");
+            saveSchoolButton.addEventListener("submit", function (event) {
+                event.preventDefault();
+                saveSchool();
+            });
+        });
+
+        function closeAddSchoolModal() {
+            let addSchoolModal = document.getElementById("addSchoolModal");
+            let modalInstance = bootstrap.Modal.getInstance(addSchoolModal);
+
+            modalInstance.hide();
+
+            setTimeout(() => {
+                document.querySelector('[data-bs-target="#addSchoolModal"]').focus();
+            }, 500);
+        }
+
+        function buildSchoolDDL(schoolName) {
+            fetch("https://localhost:7243/api/schools", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    let selSchool = document.getElementById("selSchool");
+                    selSchool.innerHTML = "";
+
+                    let allOption = document.createElement("option");
+                    allOption.value = "";
+                    allOption.textContent = "Select a School";
+                    selSchool.appendChild(allOption);
+
+                    data.forEach(school => {
+                        let option = document.createElement("option");
+                        option.value = school.schoolId;
+                        option.textContent = school.schoolName;
+                        selSchool.appendChild(option);
+
+
+                        if (schoolName && school.schoolName.toLowerCase() === schoolName.toLowerCase()) {
+                            selSchool.value = school.schoolId;
+                        }
+                    });
+
+                })
+
+                .catch(error => console.error("Error fetching schools:", error));
+        }
+
+        function saveStudent() {
+            const postObj = {
+                firstName: document.getElementById("firstName").value.trim(),
+                lastName: document.getElementById("lastName").value.trim(),
+                schoolId: document.getElementById("selSchool").value.trim(),
+                major: document.getElementById("major").value.trim(),
+                isActive: document.getElementById("isActive").checked
+            };
+
+            fetch("https://localhost:7243/api/students", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(postObj)
+            })
+                .then(async response => {
+                    let data = await response.json();
+                    console.log("Response Status:", response.status, "Data:", data);
+
+                    if (!response.ok) {
+                        throw data;
+                    }
+
+                    return data;
+                })
+                .then(() => {
+                    document.getElementById("successMessage").style.display = "block";
+                    setTimeout(() => window.location.href = "/students/list", 2000);
+                })
+                .catch(error => {
+                    console.error("Error saving student:", error);
+                    if (error.errors) {
+                        displayStudentErrors(error.errors);
+                    }
+                });
+        }
+
+        function saveSchool() {
+            const postObj = {
+                schoolName: document.getElementById("schoolName").value.trim(),
+                addressLine1: document.getElementById("address1").value.trim(),
+                addressLine2: document.getElementById("address2").value.trim(),
+                city: document.getElementById("city").value.trim(),
+                state: document.getElementById("state").value.trim(),
+                zipCode: document.getElementById("zipCode").value.trim()
+            };
+
+            fetch("https://localhost:7243/api/schools", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(postObj)
+            })
+                .then(async response => {
+                    let data = await response.json();
+
+                    if (!response.ok) {
+                        throw data;
+                    }
+
+                    return data;
+                })
+                .then(newSchool => {
+                    let modal = bootstrap.Modal.getInstance(document.getElementById("addSchoolModal"));
+                    modal.hide();
+
+                    buildSchoolDDL(postObj.schoolName);
+                })
+                .catch(error => {
+                    console.error("Error saving school:", error);
+                    if (error.errors) {
+                        displaySchoolErrors(error.errors);
+                    }
+                });
+        }
+
+
+        function displaySchoolErrors(errors) {
+            let errorDiv = document.getElementById("schoolErrorMessages");
+
+            errorDiv.innerHTML = "";
+            if (errors && Array.isArray(errors)) {
+                errors.forEach(err => {
+                    let errorItem = document.createElement("p");
+                    errorItem.textContent = err;
+                    errorDiv.appendChild(errorItem);
+                });
+
+                errorDiv.style.display = "block";
+
+                setTimeout(() => {
+                    errorDiv.style.display = "none";
+                }, 3000)
+            }
+        }
+
+        function displayStudentErrors(errors) {
+            let errorDiv = document.getElementById("studentErrorMessages");
+
+            errorDiv.innerHTML = "";
+            if (errors && Array.isArray(errors)) {
+                errors.forEach(err => {
+                    let errorItem = document.createElement("p");
+                    errorItem.textContent = err;
+                    errorDiv.appendChild(errorItem);
+                });
+
+                errorDiv.style.display = "block";
+
+                setTimeout(() => {
+                    errorDiv.style.display = "none";
+                }, 3000)
+            }
+        }
+    </script>
+}
